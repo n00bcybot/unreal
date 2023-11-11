@@ -1,28 +1,72 @@
 import maya.cmds as cmds
-import arnold
+import os
 
 
-# Get all meshes in the scene and their names (transform node name)
-mesh_shapes = cmds.ls(g=True)
-mesh_list = []
-for mesh in mesh_shapes:
-    mesh_list.append(cmds.listRelatives(mesh, parent=True)[0])
+# Create list of all meshes in teh scene
+def getAllMeshes():
+    mesh_shapes = cmds.ls(g=True)
+    mesh_list = []
+    for mesh in mesh_shapes:
+        mesh_list.append(cmds.listRelatives(mesh, parent=True)[0])
+    return mesh_list
 
-# Print all shaders for each mesh in the list, returns list if multiple shaders are applied to a mesh
-shaders = []
-for mesh in mesh_list:
+
+# Get all materials applied to the mesh
+def getMeshMaterials(mesh):
+    # Print all shaders for each mesh in the list, returns list if multiple shaders are applied to a mesh
+    material = ''
     if not cmds.hyperShade(geo=mesh, lmn=True):
         pass
     else:
-        shaders.append(cmds.hyperShade(geo=mesh, lmn=True)[0])
-
-# Get all texture nodes, connected to each shader
-texture_nodes = []
-for shader in shaders:
-    texture_nodes.append(cmds.listConnections(shader, t='file')) #, c=True))
+        material = cmds.hyperShade(geo=mesh, lmn=True)
+    return material
 
 
-# Get the path of the texture
-file_path = texture_nodes[0][0] + '.fileTextureName'
-# Get the file path using getAttr
-print(cmds.getAttr(file_path))
+# Get all attributes of a material shader, utility
+def getMaterialAttrs(material):
+    return cmds.listAttr(material)
+
+
+# Get all nodes connected to the material and are textures (files) and build dictionary with the name of the node
+# as key, the basename (that includes the extension) and the file path as values (dictionary)
+def getMaterialNodes(material):
+    connected_nodes = {}
+    # all_attributes = getMaterialAttrs(material)
+    connected_attributes = cmds.listConnections(material, t='file', c=True)  # , c=True))
+
+    even = []
+    odds = []
+
+    if connected_attributes is not None:
+        for attr in connected_attributes:
+            if connected_attributes.index(attr) % 2 == 0:
+                even.append(attr.replace(material + '.', ''))
+            else:
+                odds.append(attr)
+    for i, j in zip(even, odds):
+        file_path = cmds.getAttr(j + '.fileTextureName')
+        node_base_name = os.path.basename(file_path)
+        # Get the file path using getAttr
+        new_dict = {'basename': node_base_name, 'path': file_path}
+        connected_nodes[i] = new_dict
+
+    return connected_nodes
+
+
+# Make a dictionary from a material with nested dictionaries for the nodes as values
+def makeMaterialDict(material):
+    materials_dict = {material: getMaterialNodes(material)}
+    return materials_dict
+
+
+# Put it all together. Create dictionary containing all the meshes in the scene and nested dictionaries for the
+# materials and the nodes connected to them, to recreate later in Unreal Engine
+assets = {}
+
+for mesh in getAllMeshes():
+    material = getMeshMaterials(mesh)
+    assets[mesh] = [makeMaterialDict(mat) for mat in material][0]
+
+for key, value in assets.items():
+    print(key, value)
+
