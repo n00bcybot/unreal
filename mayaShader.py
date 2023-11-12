@@ -19,6 +19,7 @@ def getMeshMaterials(mesh):
         pass
     else:
         material = cmds.hyperShade(geo=mesh, lmn=True)
+
     return material
 
 
@@ -55,7 +56,10 @@ def getMaterialNodes(material):
 
 # Make a dictionary from a material with nested dictionaries for the nodes as values
 def makeMaterialDict(material):
-    materials_dict = {material: getMaterialNodes(material)}
+    materials_dict = {}
+    for mat in material:
+        materials_dict[mat] = getMaterialNodes(mat)
+
     return materials_dict
 
 
@@ -65,8 +69,9 @@ assets = {}
 
 for mesh in getAllMeshes():
     material = getMeshMaterials(mesh)
-    assets[mesh] = [makeMaterialDict(mat) for mat in material][0]
+    assets[mesh] = makeMaterialDict(material)
 
 for key, value in assets.items():
     print(key, value)
 
+# print(assets)
