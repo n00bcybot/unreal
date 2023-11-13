@@ -1,6 +1,13 @@
 import unreal
 import os
 import sys
+import json
+import numpy as np
+
+
+file_path = "C:/Users/fresh/Desktop/maya/rendertest/materials.json"
+with open(file_path, 'r') as json_file:
+    materials = json.load(json_file)
 
 # asset = unreal.EditorUtilityLibrary().get_selected_assets()
 # asset = list(asset)
@@ -9,8 +16,8 @@ import sys
 # asset2 = unreal.EditorActorSubsystem.get_fname(list(asset)[0])
 # print(type(asset2))
 
-asset_folder = 'C:\\Users\\fresh\\Desktop\\maya\\arctic'
-asset_type = ['.fbx', '.exr']
+
+asset_type = ['.png']
 
 #Check if the folder is correct
 def checkFolderPath(directory):
@@ -48,9 +55,9 @@ def getAssets(directory, extension=None):
 def setDestination(type):
     return{
         '.fbx': '/Game/Assets/FBX',
-        '.png': '/Game/Assets/textures',
-        '.jpg': '/Game/Assets/textures',
-        '.exr': '/Game/Assets/textures'
+        '.png': '/Game/Assets/Textures',
+        '.jpg': '/Game/Assets/Textures',
+        '.exr': '/Game/Assets/Textures'
     }[type]
 
 # Import assets' list
@@ -66,13 +73,30 @@ def createTask(destination_path, file_name):
     return task
 
 
-def startImport():
+
+def startImport(asset_folder):
     
     assets = getAssets(asset_folder, asset_type)
     task = []
     for file, destination in assets.items():
         task.append(createTask(setDestination(destination), file))
-    # The actual method that performs the task. It take list.
+    # The actual method that performs the task. It takes list.
     unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(task)
-    
-startImport()
+
+# Get all folders that contain the assets to import
+def getFolders(materials_json):
+    folders_list = []
+    for mesh in materials_json.values():
+        material = mesh.values()
+        for mat in material:
+            texture = mat.values()
+            folders = list(texture)
+            for folder in folders:
+                folders_list.append(folder['folder'])
+
+    folders_list = np.unique(folders_list)
+    return folders_list
+
+asset_folders = getFolders(materials)
+for folder in asset_folders:
+    startImport(folder)

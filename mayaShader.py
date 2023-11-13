@@ -1,7 +1,10 @@
+import maya.standalone
+maya.standalone.initialize()
 import maya.cmds as cmds
 import os
+import json
 
-
+cmds.file("C:/Users/fresh/Desktop/maya/rendertest/buttress.ma", o=True)
 # Create list of all meshes in teh scene
 def getAllMeshes():
     mesh_shapes = cmds.ls(g=True)
@@ -47,8 +50,9 @@ def getMaterialNodes(material):
     for i, j in zip(even, odds):
         file_path = cmds.getAttr(j + '.fileTextureName')
         node_base_name = os.path.basename(file_path)
+        dir_name = os.path.dirname(file_path)
         # Get the file path using getAttr
-        new_dict = {'basename': node_base_name, 'path': file_path}
+        new_dict = {'basename': node_base_name, 'path': file_path, 'folder': dir_name}
         connected_nodes[i] = new_dict
 
     return connected_nodes
@@ -71,7 +75,8 @@ for mesh in getAllMeshes():
     material = getMeshMaterials(mesh)
     assets[mesh] = makeMaterialDict(material)
 
-for key, value in assets.items():
-    print(key, value)
+# Export to JSON
+file_path = "C:/Users/fresh/Desktop/maya/rendertest/materials.json"
 
-# print(assets)
+with open(file_path, 'w') as json_file:
+    json.dump(assets, json_file, indent=2)
