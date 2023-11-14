@@ -5,6 +5,7 @@ import json
 import numpy as np
 
 
+# Import the json file containing the materials and their properties
 file_path = "C:/Users/fresh/Desktop/maya/rendertest/materials.json"
 with open(file_path, 'r') as json_file:
     materials = json.load(json_file)
@@ -19,7 +20,7 @@ with open(file_path, 'r') as json_file:
 
 asset_type = ['.png']
 
-#Check if the folder is correct
+# Check if the given path is correct and if in deed points to a folder
 def checkFolderPath(directory):
     try:
         if not os.path.exists(directory) or not os.path.isdir(directory):
@@ -31,15 +32,15 @@ def checkFolderPath(directory):
         pass
         
 
-# Get assets to import. Set asset type by providing extension argument, or leave blank for all types:
+# Get assets to import. Set asset type by providing extension as argument, or leave blank for all types of extensions:
 # assets = getAssets(asset_folder, asset_type)
 def getAssets(directory, extension=None):
     
     # Check path if the path is correct
     checkFolderPath(directory)
 
-    # Go through all file in the directory. If extension type(s) is(are) provided, append only those files with such extension,
-    # otherwise append all files in the directory to the list
+    # Go through all files in the directory. If extension type(s) is(are) provided, append only those files with such extension,
+    # otherwise append to the list all files in the directory 
     assets = {}
     for file in os.listdir(directory):
         if extension != None:
@@ -61,7 +62,6 @@ def setDestination(type):
     }[type]
 
 # Import assets' list
-
 def createTask(destination_path, file_name):
     task = unreal.AssetImportTask()
     task.set_editor_property('automated', True)
@@ -83,7 +83,7 @@ def startImport(asset_folder):
     # The actual method that performs the task. It takes list.
     unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(task)
 
-# Get all folders that contain the assets to import
+# Get all folders that contain the textures to import
 def getFolders(materials_json):
     folders_list = []
     for mesh in materials_json.values():
@@ -93,10 +93,14 @@ def getFolders(materials_json):
             folders = list(texture)
             for folder in folders:
                 folders_list.append(folder['folder'])
-
+    # np.unique looks into the list for repeating path and eliminates them
     folders_list = np.unique(folders_list)
     return folders_list
 
+# Import the textures from each folder
 asset_folders = getFolders(materials)
 for folder in asset_folders:
     startImport(folder)
+
+# Now when he textures are imported, materials can be created with the respective textures
+
